@@ -1,0 +1,110 @@
+import { useEffect, useRef, type ReactNode } from 'react'
+import { DIAS_HISTORIA, fechaMaxima } from '../config/limites'
+import { hoyISO, sumarDias } from '../lib/fechas'
+
+const ddmm = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`
+
+function Seccion({ titulo, children }: { titulo: string; children: ReactNode }) {
+  return (
+    <section className="border-t border-linea pt-5">
+      <h3 className="font-tablero text-2xl font-bold text-noche">{titulo}</h3>
+      <div className="mt-2 space-y-2 leading-relaxed text-tinta">{children}</div>
+    </section>
+  )
+}
+
+export default function Ayuda({ alCerrar }: { alCerrar: () => void }) {
+  const cerrar = useRef<HTMLButtonElement>(null)
+  const hoy = hoyISO()
+  const desde = ddmm(sumarDias(hoy, -DIAS_HISTORIA))
+  const hasta = ddmm(fechaMaxima(hoy))
+
+  // ref para no re-ejecutar el efecto en cada render (la tabla se actualiza en tiempo real)
+  const alCerrarRef = useRef(alCerrar)
+  alCerrarRef.current = alCerrar
+
+  useEffect(() => {
+    cerrar.current?.focus()
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && alCerrarRef.current()
+    document.addEventListener('keydown', esc)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', esc)
+      document.body.style.overflow = ''
+    }
+  }, [])
+
+  const b = (t: string) => <strong className="text-noche">{t}</strong>
+
+  return (
+    <div role="dialog" aria-modal="true" aria-labelledby="titulo-ayuda"
+      className="fixed inset-0 z-30 flex justify-center bg-noche/60 pt-[env(safe-area-inset-top,0px)]" onClick={alCerrar}>
+      <div className="mt-6 flex w-full max-w-2xl flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:mb-6 sm:rounded-3xl"
+        onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between bg-noche px-5 py-4 text-white">
+          <h2 id="titulo-ayuda" className="font-tablero text-3xl font-extrabold">Cómo se usa</h2>
+          <button ref={cerrar} onClick={alCerrar} className="rounded-full border border-white/30 px-4 py-1.5 text-sm font-semibold">Cerrar</button>
+        </div>
+
+        <div className="flex-1 space-y-5 overflow-y-auto px-5 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] pt-5">
+          <p className="leading-relaxed text-tinta">
+            Esta app reemplaza a la imagen que se iba editando a mano: todos los que toman reservas cargan en la
+            misma tabla y la imagen para WhatsApp se arma sola.
+          </p>
+
+          <Seccion titulo="Ingresar">
+            <p>Entrá con el usuario y la contraseña del complejo. En {b('Tu nombre')}, que es obligatorio, poné cómo te llaman: aparece en cada turno que marques, así se sabe quién lo tomó.</p>
+            <p>La sesión queda abierta en ese celu o compu durante 60 días. Si la usás en un equipo compartido, tocá {b('Salir')} al terminar.</p>
+          </Seccion>
+
+          <Seccion titulo="Elegir el día">
+            <p>La app tiene tres pestañas: {b('Fijos')}, {b('Turnos')} (Cancha 1 y Cancha 2) e {b('Imagen')}.</p>
+            <p>Con las flechas ‹ › pasás al día anterior o al siguiente. Para ir a una fecha puntual, tocá la fecha y se abre el calendario. El botón {b('Hoy')} te vuelve al día actual.</p>
+          </Seccion>
+
+          <Seccion titulo="Cargar una reserva">
+            <p>En la pestaña {b('Turnos')}, tocá el horario libre en la cancha que corresponde. Se abre un cuadro que pregunta {b('¿Para quién es la reserva?')}: escribí el nombre y tocá {b('Reservar')}.</p>
+            <p>Si tocás un turno ya reservado, ves para quién es, quién lo reservó y cuándo. Desde ahí lo podés liberar con {b('Liberar turno')}.</p>
+            <p>Abajo aparece un aviso con {b('Deshacer')} durante unos segundos, por si te equivocaste.</p>
+            <p>Cada turno reservado muestra quién lo marcó y a qué hora. Los horarios que ya pasaron se ven más claros.</p>
+            <p>Si otra persona reserva o libera un turno, lo ves al instante en tu pantalla, sin recargar.</p>
+          </Seccion>
+
+          <Seccion titulo="Turnos fijos">
+            <p>En la pestaña {b('Fijos')} cargás los turnos que se repiten todas las semanas: día, hora, cancha y para quién. Se reservan solos hasta fin del mes próximo, y la ventana se corre sola cada mes.</p>
+            <p>Si alguna de esas fechas ya está reservada, la app te avisa cuáles son y qué otras canchas están libres ese día. Si hay una cancha libre todas las semanas, te ofrece usarla. Si guardás igual, esas fechas se saltean y no se pisa la reserva que ya estaba.</p>
+            <p>En la tabla, los turnos fijos dicen {b('Fijo')}. Si un día no vienen, tocá el turno y elegí {b('Liberar solo este día')}: las otras semanas siguen reservadas.</p>
+            <p>Si editás o eliminás un turno fijo, cambian sus reservas de hoy en adelante. Las pasadas quedan como historial.</p>
+          </Seccion>
+
+          <Seccion titulo="Compartir la imagen">
+            <p>En la pestaña {b('Imagen')} está la imagen del día elegido, actualizada con la tabla. No hay que generarla: cambia sola con cada reserva.</p>
+            <p>En el celu, tocá {b('Compartir por WhatsApp')} y elegí el chat o el estado. En la compu, tocá {b('Descargar imagen')} y arrastrala a WhatsApp Web.</p>
+          </Seccion>
+
+          <Seccion titulo="Contactos de la imagen">
+            <p>Los teléfonos del pie de la imagen se editan en la pestaña {b('Imagen')}, tocando {b('Contactos de la imagen')}. Ahí podés agregar, editar, eliminar y cambiar el orden con las flechas ↑ ↓.</p>
+            <p>Entran hasta 4 contactos. El orden de la lista es el de la imagen, y los cambios se ven al instante en todos los dispositivos.</p>
+          </Seccion>
+
+          <Seccion titulo="Qué fechas se pueden usar">
+            <p>Se puede {b('reservar y cancelar')} desde hoy hasta el último día del mes próximo: hoy eso es hasta el {b(hasta)}. El primer día de cada mes se habilita un mes más.</p>
+            <p>Los días anteriores a hoy son de {b('solo consulta')}: se ven los turnos y quién los reservó, pero no se pueden cambiar. El historial llega hasta {DIAS_HISTORIA} días atrás (hoy, desde el {b(desde)}).</p>
+            <p>Fuera de ese rango, las flechas se desactivan y el calendario no deja elegir la fecha.</p>
+          </Seccion>
+
+          <Seccion titulo="Borrado automático">
+            <p>Los turnos de más de {DIAS_HISTORIA} días se borran solos de la base, y no se pueden recuperar. Así la base no crece sin límite.</p>
+            <p>Si necesitás guardar cómo quedó un día, descargá su imagen antes de que se cumpla ese plazo.</p>
+          </Seccion>
+
+          <Seccion titulo="Si algo no anda">
+            <p>{b('"La sesión se cerró"')}: cambió la contraseña o pasaron los 60 días. Volvé a ingresar.</p>
+            <p>{b('"No se pudo guardar el cambio"')}: se cortó la conexión. El turno vuelve a como estaba; tocalo de nuevo cuando tengas señal.</p>
+            <p>{b('No aparece el botón de compartir')}: ese navegador no lo permite. Usá {b('Descargar imagen')} y mandala desde WhatsApp.</p>
+          </Seccion>
+        </div>
+      </div>
+    </div>
+  )
+}
