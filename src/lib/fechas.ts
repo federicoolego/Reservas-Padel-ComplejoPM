@@ -29,6 +29,19 @@ export function horaDe(ts: string): string {
   return new Intl.DateTimeFormat('es-AR', { timeZone: ZONA, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(ts))
 }
 
+/** Fecha local YYYY-MM-DD (hora Argentina) de un timestamp */
+export function fechaDe(ts: string): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: ZONA, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(ts))
+}
+
+/** "Actualizado: HOY - 13:10hs - Ronal" / "02/10 - 14:45hs - Ronal" (cuándo y quién hizo un cambio) */
+export function textoActualizado(ts: string, quien: string | null | undefined): string {
+  const f = fechaDe(ts)
+  const partes = [etiquetaRelativa(f) ?? ddmm(f), `${horaDe(ts)}hs`]
+  if (quien) partes.push(quien)
+  return partes.join(' - ')
+}
+
 /** "30/09 a las 19:42" (hora Argentina) de un timestamp */
 export function fechaHoraDe(ts: string): string {
   const p = Object.fromEntries(

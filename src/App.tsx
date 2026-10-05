@@ -113,7 +113,7 @@ function Principal({ sesion, alSalir, alVencer }: { sesion: Sesion; alSalir: () 
 
         {/* pestañas del módulo */}
         <div className="grid grid-cols-3 rounded-xl bg-white p-1 border border-linea" role="tablist">
-          {(['fijos', 'turnos', 'imagen'] as const).map((p) => ( 
+          {(['fijos', 'turnos', 'imagen'] as const).map((p) => (
             <button key={p} role="tab" aria-selected={vista.pestana === p}
               onClick={() => setVista((v) => ({ ...v, pestana: p }))}
               className={`rounded-lg py-2.5 font-tablero text-xl font-bold ${
@@ -136,7 +136,7 @@ function Principal({ sesion, alSalir, alVencer }: { sesion: Sesion; alSalir: () 
           <p className="py-16 text-center text-tinta">Cargando turnos…</p>
         ) : vista.pestana === 'turnos' ? (
           <TablaTurnos complejo={complejo} fecha={fecha} turnos={turnos} token={sesion.token}
-            aplicarLocal={aplicarLocal} alVencerSesion={alVencer} />
+            aplicarLocal={aplicarLocal} alVencerSesion={alVencer} nombre={sesion.nombre || sesion.usuario} />
         ) : (
           <VistaImagen complejo={complejo} fecha={fecha} turnos={turnos} token={sesion.token} alVencerSesion={alVencer} />
         )}
