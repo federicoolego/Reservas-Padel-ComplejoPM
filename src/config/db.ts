@@ -7,6 +7,7 @@ export const TABLA = {
   contactos: `${PREFIJO}_contactos`,
   fijos: `${PREFIJO}_fijos`,
   bloqueos: `${PREFIJO}_bloqueos`,
+  horarios: `${PREFIJO}_horarios`,
 } as const
 
 export const RPC = {
@@ -24,6 +25,9 @@ export const RPC = {
   bloqueoPrevisualizar: `${PREFIJO}_bloqueo_previsualizar`,
   bloqueoGuardar: `${PREFIJO}_bloqueo_guardar`,
   bloqueoEliminar: `${PREFIJO}_bloqueo_eliminar`,
+  horarioPrevisualizar: `${PREFIJO}_horario_previsualizar`,
+  horarioAgregar: `${PREFIJO}_horario_agregar`,
+  horarioEliminar: `${PREFIJO}_horario_eliminar`,
 } as const
 
 // Claves de localStorage: otras apps del mismo dominio (federicoolego.github.io) lo comparten.
