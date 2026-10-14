@@ -30,16 +30,13 @@ create policy "reservas_complejopm_horarios lectura publica"
 grant select on table public.reservas_complejopm_horarios to anon, authenticated;
 
 insert into public.reservas_complejopm_horarios (complejo, hora)
-values ('complejopm', '10:00'),
-       ('complejopm', '11:30'),
-       ('complejopm', '13:00'),
-       ('complejopm', '14:30'),
-       ('complejopm', '16:00'),
-       ('complejopm', '17:30'),
-       ('complejopm', '19:00'),
-       ('complejopm', '20:30'),
-       ('complejopm', '22:00'),
-       ('complejopm', '23:30')
+values ('complejopm', '14:00'),
+       ('complejopm', '15:30'),
+       ('complejopm', '17:00'),
+       ('complejopm', '18:30'),
+       ('complejopm', '20:00'),
+       ('complejopm', '21:30'),
+       ('complejopm', '23:00')
 on conflict (complejo, hora) do nothing;
 
 -- Qué reservas, fijos y bloqueos usan ese horario en ese complejo (para avisar antes de eliminarlo)
