@@ -2,6 +2,7 @@ import type { Complejo } from '../config/complejos'
 import { claveTurno, type MapaTurnos } from './turnos'
 import { etiquetaRelativa, fechaLarga } from './fechas'
 import { logoImagenUrl } from './marca'
+import { bloqueoDiaCompleto, bloqueoEn, MOTIVOS, type Bloqueo } from './bloqueos'
 
 export interface ContactoImagen {
   nombre: string
@@ -216,7 +217,7 @@ function tituloPM(ctx: CanvasRenderingContext2D, fecha: string, logo: HTMLImageE
   espaciado(ctx, t, ANCHO / 2, 499, 30, 5, C.pelota, 600)
 }
 
-function columnasPM(ctx: CanvasRenderingContext2D, c: Complejo, turnos: MapaTurnos, top: number, alto: number) {
+function columnasPM(ctx: CanvasRenderingContext2D, c: Complejo, turnos: MapaTurnos, top: number, alto: number, fecha: string, bloqueos: Bloqueo[]) {
   const n = c.canchas.length
   const margen = 70
   const sep = 26
@@ -256,13 +257,42 @@ function columnasPM(ctx: CanvasRenderingContext2D, c: Complejo, turnos: MapaTurn
     const nombre = cancha.toUpperCase()
     texto(ctx, nombre, cx, top + (altoCab - 14) / 2 + 2, tamQueEntra(ctx, nombre, 62, anchoCol - 40), 800, '#FFFFFF', 'center', false)
 
+    // cancha bloqueada todo el día: cartel negro con el motivo (coherente con la cabecera)
+    const entera = bloqueoDiaCompleto(bloqueos, fecha, cancha)
+    if (entera) {
+      ctx.save()
+      ctx.beginPath()
+      ctx.roundRect(x + 10, top + altoCab, anchoCol - 20, altoCol - altoCab - 10, 16)
+      ctx.fillStyle = P.tinta
+      ctx.fill()
+      ctx.restore()
+      const m = MOTIVOS[entera.motivo]
+      const palabras = m.cartel.split(' ')
+      const hasta = entera.hasta > fecha ? entera.hasta : null
+      const cy = top + altoCab + (altoCol - altoCab) / 2 - (hasta ? 26 : 0)
+      ctx.save()
+      ctx.font = '36px sans-serif'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(m.icono, cx, cy - 36 - palabras.length * 26)
+      ctx.restore()
+      palabras.forEach((w, k) => texto(ctx, w, cx, cy - (palabras.length - 1) * 26 + k * 52, tamQueEntra(ctx, w, 48, anchoCol - 32), 800, '#FFFFFF', 'center', false))
+      if (hasta) {
+        const yh = cy + palabras.length * 26 + 30
+        espaciado(ctx, 'HASTA EL', cx, yh, 18, 3, 'rgba(255,255,255,0.65)', 600)
+        texto(ctx, `${hasta.slice(8, 10)}/${hasta.slice(5, 7)}`, cx, yh + 32, 34, 800, C.pelota, 'center', false)
+      }
+      return
+    }
+
     c.horarios.forEach((h, j) => {
       const y = top + altoCab + 4 + paso * j + paso / 2
       if (j > 0) {
         ctx.fillStyle = P.linea
         ctx.fillRect(x + 28, y - paso / 2, anchoCol - 56, 1.5)
       }
-      const reservada = turnos[claveTurno(cancha, h)]?.estado === 'reservada'
+      // un turno bloqueado tampoco está libre: sale con pelotita
+      const reservada = turnos[claveTurno(cancha, h)]?.estado === 'reservada' || !!bloqueoEn(bloqueos, fecha, cancha, h)
       texto(ctx, `${h} HS`, cx, y + 2, tamHora, 700, reservada ? 'rgba(20,20,20,0.28)' : P.tinta, 'center', false)
       if (reservada) pelota(ctx, cx, y, paso * 0.36)
     })
@@ -288,14 +318,14 @@ function piePM(ctx: CanvasRenderingContext2D, lista: ContactoImagen[], top: numb
   })
 }
 
-function dibujarPM(ctx: CanvasRenderingContext2D, c: Complejo, fecha: string, turnos: MapaTurnos, logo: HTMLImageElement | null, contactos: ContactoImagen[]) {
+function dibujarPM(ctx: CanvasRenderingContext2D, c: Complejo, fecha: string, turnos: MapaTurnos, logo: HTMLImageElement | null, contactos: ContactoImagen[], bloqueos: Bloqueo[]) {
   fondoPM(ctx)
   tituloPM(ctx, fecha, logo)
   const filasPie = Math.ceil(contactos.length / 2)
   const altoPie = contactos.length ? 66 + 104 * filasPie + 30 : 0
   const top = 566
   const finColumnas = ALTO - 90 - altoPie
-  columnasPM(ctx, c, turnos, top, finColumnas - top - 20)
+  columnasPM(ctx, c, turnos, top, finColumnas - top - 20, fecha, bloqueos)
   piePM(ctx, contactos, finColumnas + 30)
   ctx.save()
   ctx.globalAlpha = 0.7
@@ -303,14 +333,14 @@ function dibujarPM(ctx: CanvasRenderingContext2D, c: Complejo, fecha: string, tu
   ctx.restore()
 }
 
-export async function generarImagen(c: Complejo, fecha: string, turnos: MapaTurnos, contactos: ContactoImagen[]): Promise<Blob> {
+export async function generarImagen(c: Complejo, fecha: string, turnos: MapaTurnos, contactos: ContactoImagen[], bloqueos: Bloqueo[] = []): Promise<Blob> {
   await prepararFuentes()
   const logo = await cargarImagen(logoImagenUrl()).catch(() => null)
   const canvas = document.createElement('canvas')
   canvas.width = ANCHO
   canvas.height = ALTO
   const ctx = canvas.getContext('2d')!
-  dibujarPM(ctx, c, fecha, turnos, logo, contactos)
+  dibujarPM(ctx, c, fecha, turnos, logo, contactos, bloqueos)
   return new Promise((ok, mal) => canvas.toBlob((b) => (b ? ok(b) : mal(new Error('No se pudo generar la imagen'))), 'image/png'))
 }
 
